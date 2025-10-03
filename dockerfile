@@ -29,16 +29,26 @@ ARG CERT_OU
 
 RUN mkdir ~/keys
 
-#Generate Certificates
-RUN git clone https://github.com/ThinkboxSoftware/SSLGeneration.git &&\
-    pip install pyopenssl==17.5.0
-
-RUN python ./SSLGeneration/ssl_gen.py --ca --cert-org ${CERT_ORG} --cert-ou ${CERT_OU} --keys-dir ~/keys &&\
-    python ./SSLGeneration/ssl_gen.py --server --cert-name ${DB_HOST} --alt-name localhost --alt-name 127.0.0.1 --keys-dir ~/keys &&\
-    python ./SSLGeneration/ssl_gen.py --client --cert-name deadline-client --keys-dir ~/keys &&\
-    python ./SSLGeneration/ssl_gen.py --pfx --cert-name deadline-client --keys-dir ~/keys --passphrase ${DB_CERT_PASS} &&\
-    cat ~/keys/${DB_HOST}.crt ~/keys/${DB_HOST}.key > ~/keys/mongodb.pem
-
+# Generate Certificates using openssl
+RUN /bin/bash -c ' \
+    CA_SUBJ="/O=${CERT_ORG}/OU=${CERT_OU}/CN=Deadline-CA" && \
+    # 1. Generate CA Key and Certificate
+    openssl genrsa -out keys/ca.key 4096 && \
+    openssl req -new -x509 -days 3650 -key keys/ca.key -out keys/ca.crt -subj "${CA_SUBJ}" && \
+    # 2. Generate Server Key and CSR
+    openssl genrsa -out keys/${DB_HOST}.key 4096 && \
+    openssl req -new -key keys/${DB_HOST}.key -out keys/${DB_HOST}.csr -subj "/CN=${DB_HOST}" && \
+    # 3. Sign Server Certificate with CA, including Subject Alternative Names (SAN)
+    openssl x509 -req -days 3650 -in keys/${DB_HOST}.csr -CA keys/ca.crt -CAkey keys/ca.key -CAcreateserial -out keys/${DB_HOST}.crt -extfile <(printf "subjectAltName=DNS:localhost,DNS:${DB_HOST},IP:127.0.0.1") && \
+    # 4. Generate Client Key and CSR
+    openssl genrsa -out keys/deadline-client.key 4096 && \
+    openssl req -new -key keys/deadline-client.key -out keys/deadline-client.csr -subj "/CN=deadline-client" && \
+    # 5. Sign Client Certificate with CA and create PFX
+    openssl x509 -req -days 3650 -in keys/deadline-client.csr -CA keys/ca.crt -CAkey keys/ca.key -CAcreateserial -out keys/deadline-client.crt && \
+    openssl pkcs12 -export -out keys/deadline-client.pfx -inkey keys/deadline-client.key -in keys/deadline-client.crt -certfile keys/ca.crt -passout env:DB_CERT_PASS && \
+    # 6. Create mongodb.pem for the server
+    cat keys/${DB_HOST}.crt keys/${DB_HOST}.key > keys/mongodb.pem \
+'
 
 RUN mkdir /client_certs
 

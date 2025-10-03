@@ -77,12 +77,12 @@ if [ "$1" == "rcs" ]; then
     if [ -e "$RCS_BIN" ]; then
 
         /bin/bash -c "$RCS_BIN"
-    else
+    else # Install RCS
         download_additional_installers &
-        echo "Initializing Remote Connection Server"
+        echo "Initializing Deadline Remote Connection Server"
         if [ "$USE_RCS_TLS" != "TRUE" ]; then
             echo "Using unencrypted RCS Server!"
-            /build/DeadlineClient-$DEADLINE_VERSION-linux-x64-installer.run \
+            /app/DeadlineClient-$DEADLINE_VERSION-linux-x64-installer.run \
             --mode unattended \
             --enable-components proxyconfig \
             --repositorydir /repo \
@@ -96,9 +96,9 @@ if [ "$1" == "rcs" ]; then
 
         elif [ -e /client_certs/Deadline10RemoteClient.pfx ]; then
             echo "Using existing certificates"
-            /build/DeadlineClient-$DEADLINE_VERSION-linux-x64-installer.run \
-            --mode unattended \
+            /app/DeadlineClient-$DEADLINE_VERSION-linux-x64-installer.run \
             --enable-components proxyconfig \
+            --mode unattended \
             --repositorydir /repo \
             --dbsslcertificate /client_certs/deadline-client.pfx \
             --dbsslpassword $DB_CERT_PASS \
@@ -115,9 +115,9 @@ if [ "$1" == "rcs" ]; then
             --osUsername root
         else
             echo "Generating Certificates"
-            /build/DeadlineClient-$DEADLINE_VERSION-linux-x64-installer.run \
-            --mode unattended \
+            /app/DeadlineClient-$DEADLINE_VERSION-linux-x64-installer.run \
             --enable-components proxyconfig \
+            --mode unattended \
             --repositorydir /repo \
             --dbsslcertificate /client_certs/deadline-client.pfx \
             --dbsslpassword $DB_CERT_PASS \
@@ -127,15 +127,15 @@ if [ "$1" == "rcs" ]; then
             --tlsport $RCS_TLS_PORT \
             --enabletls true \
             --tlscertificates generate \
-            --generatedcertdir ~/certs \
+            --generatedcertdir /app/certs \
             --clientcert_pass $RCS_CERT_PASS \
             --secretsAdminName $SECRETS_USERNAME \
             --secretsAdminPassword $SECRETS_PASSWORD \
             --osUsername root
 
-            cp /root/certs/Deadline10RemoteClient.pfx /client_certs/Deadline10RemoteClient.pfx
-            cp /root/certs/$HOSTNAME.pfx /server_certs/$HOSTNAME.pfx
-            cp /root/certs/ca.crt /server_certs/ca.crt
+            cp /app/certs/Deadline10RemoteClient.pfx /client_certs/Deadline10RemoteClient.pfx
+            cp /app/certs/$HOSTNAME.pfx /server_certs/$HOSTNAME.pfx
+            cp /app/certs/ca.crt /server_certs/ca.crt
         fi
         
         
@@ -147,11 +147,11 @@ if [ "$1" == "rcs" ]; then
     fi
 
 elif [ "$1" == "webservice" ] && [ "$USE_WEBSERVICE" == "TRUE" ]; then
-    if [ -e "$WEB_BIN" ]; then
+    if [ -e "$WEB_BIN" ]; then # Already installed
         /bin/bash -c "$WEB_BIN"
     else
-        echo "Initializing Deadline Webservice"
-        /build/DeadlineClient-$DEADLINE_VERSION-linux-x64-installer.run \
+        echo "Initializing Deadline Webservice" # Install Webservice
+        /app/DeadlineClient-$DEADLINE_VERSION-linux-x64-installer.run \
         --mode unattended \
         --enable-components webservice_config \
         --repositorydir /repo \
@@ -170,11 +170,11 @@ elif [ "$1" == "worker" ]; then
     echo "not yet implemented"
 
 elif [ "$1" == "forwarder" ] && [ "$USE_LICENSE_FORWARDER" == "TRUE" ]; then
-    if [ -e "$FORWARDER_BIN" ]; then
+    if [ -e "$FORWARDER_BIN" ]; then # Already installed
         /bin/bash -c "$FORWARDER_BIN"
     else
-        echo "Initializing License Forwarder"
-        /build/DeadlineClient-$DEADLINE_VERSION-linux-x64-installer.run \
+        echo "Initializing License Forwarder" # Install License Forwarder
+        /app/DeadlineClient-$DEADLINE_VERSION-linux-x64-installer.run \
         --mode unattended \
         --repositorydir /repo \
         --dbsslcertificate /client_certs/deadline-client.pfx \
@@ -190,12 +190,12 @@ elif [ "$1" == "forwarder" ] && [ "$USE_LICENSE_FORWARDER" == "TRUE" ]; then
     fi
 
 elif [ "$1" == "zt-forwarder" ]  && [ "$USE_LICENSE_FORWARDER" == "TRUE" ]; then
-    if [ -e "$FORWARDER_BIN" ]; then
+    if [ -e "$FORWARDER_BIN" ]; then # Already installed
         /usr/sbin/zerotier-one -d
         /bin/bash -c "$FORWARDER_BIN"
     else
-        echo "Initializing ZT License Forwarder"
-        /build/DeadlineClient-$DEADLINE_VERSION-linux-x64-installer.run \
+        echo "Initializing ZT License Forwarder" # Install ZT License Forwarder
+        /app/DeadlineClient-$DEADLINE_VERSION-linux-x64-installer.run \
         --mode unattended \
         --repositorydir /repo \
         --dbsslcertificate /client_certs/deadline-client.pfx \

@@ -1,2 +1,11 @@
+# Environment variables - contains secrets!
 .env
-.tar
+
+# IDE and OS files
+.idea/
+.vscode/
+*.DS_Store
+
+# Data generated and managed by Docker volumes.
+# Use the backup/restore scripts for this data.
+__pycache__/
